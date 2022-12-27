@@ -1,0 +1,8 @@
+interactive-snake
+snake
+unit-tests
+custom-tests
+unit-test-*.snk
+*.exe
+*.o
+tests/*-out.snk
