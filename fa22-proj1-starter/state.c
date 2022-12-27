@@ -1,5 +1,6 @@
 #include "state.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,8 +24,44 @@ static void update_head(game_state_t* state, unsigned int snum);
 
 /* Task 1 */
 game_state_t* create_default_state() {
-  // TODO: Implement this function.
-  return NULL;
+	game_state_t *state = (game_state_t *) malloc(sizeof (game_state_t));
+	assert(state != NULL);
+
+	// Allocate heap memory for board
+	state->board = (char **) malloc(18 * sizeof(char *));
+	assert(state->board != NULL);
+
+	for (size_t i = 0; i < 18; i ++) {
+		state->board[i]	= (char *) malloc(sizeof ("####################"));
+		assert(state->board[i] != NULL);
+	}
+
+	// Initialize board
+	state->num_rows = 18;
+
+	strcpy(state->board[0], "####################");
+	for (size_t i = 1; i <= 16; i ++) {
+		if (i == 2) {
+			strcpy(state->board[i], "# d>D    *         #");
+			continue;
+		}
+		strcpy(state->board[i], "#                  #");
+	}
+	strcpy(state->board[17], "####################");
+
+	// Allocate memory for snake
+	state->snakes = (snake_t *) malloc(sizeof (snake_t));
+	assert(state->snakes != NULL);
+
+	// Initialize snake
+	state->num_snakes = 1;
+	state->snakes->head_col = 4;
+	state->snakes->head_row = 2;
+	state->snakes->tail_col = 2;
+	state->snakes->tail_row = 2;
+	state->snakes->live = true;
+
+  return state;
 }
 
 /* Task 2 */
