@@ -278,6 +278,36 @@ static char next_square(game_state_t* state, unsigned int snum) {
 */
 static void update_head(game_state_t* state, unsigned int snum) {
   // TODO: Implement this function.
+	// Get the targets
+	snake_t *buf_snake = state->snakes + snum;
+
+	// Modify the board
+	char head = get_board_at(state, buf_snake->head_row, buf_snake->head_col);
+	switch (head) {
+		case 'W':
+			set_board_at(state, buf_snake->head_row, buf_snake->head_col, '^');
+			set_board_at(state, buf_snake->head_row - 1, buf_snake->head_col, 'W');
+			buf_snake->head_row --;
+			break;
+		case 'A':
+			set_board_at(state, buf_snake->head_row, buf_snake->head_col, '<');
+			set_board_at(state, buf_snake->head_row, buf_snake->head_col - 1, 'A');
+			buf_snake->head_col --;
+			break;
+		case 'S':
+			set_board_at(state, buf_snake->head_row, buf_snake->head_col, 'v');
+			set_board_at(state, buf_snake->head_row + 1, buf_snake->head_col, 'S');
+			buf_snake->head_row ++;
+			break;
+		case 'D':
+			set_board_at(state, buf_snake->head_row, buf_snake->head_col, '>');
+			set_board_at(state, buf_snake->head_row, buf_snake->head_col + 1, 'D');
+			buf_snake->head_col ++;
+			break;
+		default:
+			break;
+	}
+
   return;
 }
 
@@ -293,6 +323,61 @@ static void update_head(game_state_t* state, unsigned int snum) {
 */
 static void update_tail(game_state_t* state, unsigned int snum) {
   // TODO: Implement this function.
+	// Get the targets
+	snake_t *buf_snake = state->snakes + snum;
+	bool is_bended = false;
+	char before_tail = '\0';
+
+	// Modify the board
+	char tail = get_board_at(state, buf_snake->tail_row, buf_snake->tail_col);
+	switch (tail) {
+		case 'w':
+			set_board_at(state, buf_snake->tail_row, buf_snake->tail_col, ' ');
+			set_board_at(state, buf_snake->tail_row - 1, buf_snake->tail_col, 'w');
+			buf_snake->tail_row --;
+			before_tail = get_board_at(state, buf_snake->tail_row - 1, buf_snake->head_col);
+			break;
+		case 'a':
+			set_board_at(state, buf_snake->tail_row, buf_snake->tail_col, ' ');
+			set_board_at(state, buf_snake->tail_row, buf_snake->tail_col - 1, 'a');
+			buf_snake->tail_col --;
+			before_tail = get_board_at(state, buf_snake->tail_row, buf_snake->head_col - 1);
+			break;
+		case 's':
+			set_board_at(state, buf_snake->tail_row, buf_snake->tail_col, ' ');
+			set_board_at(state, buf_snake->tail_row + 1, buf_snake->tail_col, 's');
+			before_tail = get_board_at(state, buf_snake->tail_row + 1, buf_snake->head_col);
+			buf_snake->tail_row ++;
+			break;
+		case 'd':
+			set_board_at(state, buf_snake->tail_row, buf_snake->tail_col, ' ');
+			set_board_at(state, buf_snake->tail_row, buf_snake->tail_col + 1, 'd');
+			before_tail = get_board_at(state, buf_snake->tail_row, buf_snake->head_col + 1);
+			buf_snake->tail_col ++;
+			break;
+		default:
+			break;
+	}
+
+	// Check whether there is a bend point
+	if (before_tail == ' ') {
+		unsigned int x_cor = buf_snake->tail_col;
+		unsigned int y_cor = buf_snake->tail_row;
+
+		if (is_snake(get_board_at(state, y_cor + 1, x_cor))) {
+			set_board_at(state, y_cor, x_cor, 's');
+		}
+		if (is_snake(get_board_at(state, y_cor - 1, x_cor))) {
+			set_board_at(state, y_cor, x_cor, 'w');
+		}
+		if (is_snake(get_board_at(state, y_cor, x_cor + 1))) {
+			set_board_at(state, y_cor, x_cor, 'd');
+		}
+		if (is_snake(get_board_at(state, y_cor, x_cor - 1))) {
+			set_board_at(state, y_cor, x_cor, 'a');
+		}
+	}
+
   return;
 }
 
