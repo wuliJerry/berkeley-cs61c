@@ -32,22 +32,22 @@ game_state_t* create_default_state() {
 	assert(state->board != NULL);
 
 	for (size_t i = 0; i < 18; i ++) {
-		state->board[i]	= (char *) malloc(sizeof ("####################"));
+		state->board[i]	= (char *) malloc(sizeof ("####################\n"));
 		assert(state->board[i] != NULL);
 	}
 
 	// Initialize board
 	state->num_rows = 18;
 
-	strcpy(state->board[0], "####################");
+	strcpy(state->board[0], "####################\n");
 	for (size_t i = 1; i <= 16; i ++) {
 		if (i == 2) {
-			strcpy(state->board[i], "# d>D    *         #");
+			strcpy(state->board[i], "# d>D    *         #\n");
 			continue;
 		}
-		strcpy(state->board[i], "#                  #");
+		strcpy(state->board[i], "#                  #\n");
 	}
-	strcpy(state->board[17], "####################");
+	strcpy(state->board[17], "####################\n");
 
 	// Allocate memory for snake
 	state->snakes = (snake_t *) malloc(sizeof (snake_t));
@@ -86,8 +86,8 @@ void free_state(game_state_t* state) {
 void print_board(game_state_t* state, FILE* fp) {
   // TODO: Implement this function.
 	for (size_t i = 0; i < state->num_rows; i ++) {
-		fprintf(fp, state->board[i]);
-		fprintf(fp, "\n");
+		fputs(state->board[i], fp);
+		//fprintf(fp, "\n");
 	}
   return;
 }
@@ -384,13 +384,78 @@ static void update_tail(game_state_t* state, unsigned int snum) {
 /* Task 4.5 */
 void update_state(game_state_t* state, int (*add_food)(game_state_t* state)) {
   // TODO: Implement this function.
+	/*
+	 * For each snake:
+	 * Snakes directly hit into a wall or a snake's body and die
+	 * Eat a fruit
+	 * Move normally
+	 */
+	for (unsigned int i = 0; i < state->num_snakes; i ++) {
+		snake_t *target_snake = state->snakes + i;
+		char next_block = next_square(state, i);
+
+		if (next_block == '#' || is_snake(next_block)) {
+			set_board_at(state, target_snake->head_row, target_snake->head_col, 'x');
+			target_snake->live = false;
+		} else if (next_block == '*') {
+			update_head(state, i);
+			add_food(state);
+		} else {
+			update_head(state, i);
+			update_tail(state, i);
+		}
+
+	}
   return;
+}
+
+static unsigned int count_lines(char *filename) {
+	FILE *fp;
+	unsigned int count = 0;
+	char c;
+
+	fp = fopen(filename, "r");
+
+	if (fp == NULL) {
+		return 0;
+	}
+
+	char buf[2048];
+
+	while (fgets(buf, 2048, fp)) {
+		count ++;
+	}
+
+	fclose(fp);
+
+	return count;
 }
 
 /* Task 5 */
 game_state_t* load_board(char* filename) {
   // TODO: Implement this function.
-  return NULL;
+	game_state_t *state = (game_state_t *) malloc(sizeof(game_state_t));
+	state->num_rows = count_lines(filename);
+
+	FILE *fp = fopen(filename, "r");
+	if (fp == NULL) {
+		perror("Error opening file");
+		return NULL;
+	}
+
+	state->board = (char **)malloc((state->num_rows + 1) * sizeof (char *));
+
+	char buf[1024];
+
+	for (size_t i = 0; i < state->num_rows; i ++) {
+		fgets(buf, sizeof(buf), fp);
+		state->board[i] = (char *)malloc(strlen(buf - 1));
+		strcpy(state->board[i], buf);
+	}
+
+	fclose(fp);
+
+  return state;
 }
 
 /*
