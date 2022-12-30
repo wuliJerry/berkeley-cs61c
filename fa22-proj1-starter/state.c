@@ -468,11 +468,64 @@ game_state_t* load_board(char* filename) {
 */
 static void find_head(game_state_t* state, unsigned int snum) {
   // TODO: Implement this function.
+	unsigned int buf_snum = snum;
+
+	for (size_t i = 0; i < state->num_rows; i ++) {
+		for (size_t j = 0; j < sizeof(state->board[i]); j ++) {
+			if (is_head(get_board_at(state, i, j))) {
+				if (buf_snum == 0)	 {
+					(state->snakes + snum)->head_row = i;
+					(state->snakes + snum)->head_col = j;
+					break;
+				}
+				buf_snum --;
+			}
+		}
+	}
+
   return;
+}
+
+static void find_tail(game_state_t* state, unsigned int snum) {
+	// TODO: Implement this function.
+	unsigned int buf_snum = snum;
+
+	for (size_t i = 0; i < state->num_rows; i ++) {
+		for (size_t j = 0; j < sizeof(state->board[i]); j ++) {
+			if (is_tail(get_board_at(state, i, j))) {
+				if (buf_snum == 0)	 {
+					(state->snakes + snum)->tail_row = i;
+					(state->snakes + snum)->tail_col = j;
+					break;
+				}
+				buf_snum --;
+			}
+		}
+	}
+
+	return;
 }
 
 /* Task 6.2 */
 game_state_t* initialize_snakes(game_state_t* state) {
   // TODO: Implement this function.
-  return NULL;
+	unsigned int count = 0;
+
+	for (size_t i = 0; i < state->num_rows; i ++) {
+		for (size_t j = 0; j < sizeof(state->board[i]); j ++) {
+			if (is_head(get_board_at(state, i, j))) {
+				count ++;
+			}
+		}
+	}
+
+	state->num_snakes = count;
+	state->snakes = (snake_t *) malloc(count * sizeof(snake_t));
+
+	for (size_t i = 0; i < count; i ++)	{
+		find_head(state, i);
+		find_tail(state, i);
+	}
+
+  return state;
 }
