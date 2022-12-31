@@ -323,60 +323,20 @@ static void update_head(game_state_t* state, unsigned int snum) {
 */
 static void update_tail(game_state_t* state, unsigned int snum) {
   // TODO: Implement this function.
-	// Get the targets
+	// Get the target
 	snake_t *buf_snake = state->snakes + snum;
-	bool is_bended = false;
-	char before_tail = '\0';
+	unsigned next_col = get_next_col(buf_snake->tail_col, get_board_at(state,
+																																		 buf_snake->tail_row, buf_snake->tail_col));
+	unsigned next_row = get_next_row(buf_snake->tail_row, get_board_at(state,
+	                                                                   buf_snake->tail_row, buf_snake->tail_col));
 
 	// Modify the board
-	char tail = get_board_at(state, buf_snake->tail_row, buf_snake->tail_col);
-	switch (tail) {
-		case 'w':
-			set_board_at(state, buf_snake->tail_row, buf_snake->tail_col, ' ');
-			set_board_at(state, buf_snake->tail_row - 1, buf_snake->tail_col, 'w');
-			buf_snake->tail_row --;
-			before_tail = get_board_at(state, buf_snake->tail_row - 1, buf_snake->head_col);
-			break;
-		case 'a':
-			set_board_at(state, buf_snake->tail_row, buf_snake->tail_col, ' ');
-			set_board_at(state, buf_snake->tail_row, buf_snake->tail_col - 1, 'a');
-			buf_snake->tail_col --;
-			before_tail = get_board_at(state, buf_snake->tail_row, buf_snake->head_col - 1);
-			break;
-		case 's':
-			set_board_at(state, buf_snake->tail_row, buf_snake->tail_col, ' ');
-			set_board_at(state, buf_snake->tail_row + 1, buf_snake->tail_col, 's');
-			before_tail = get_board_at(state, buf_snake->tail_row + 1, buf_snake->head_col);
-			buf_snake->tail_row ++;
-			break;
-		case 'd':
-			set_board_at(state, buf_snake->tail_row, buf_snake->tail_col, ' ');
-			set_board_at(state, buf_snake->tail_row, buf_snake->tail_col + 1, 'd');
-			before_tail = get_board_at(state, buf_snake->tail_row, buf_snake->head_col + 1);
-			buf_snake->tail_col ++;
-			break;
-		default:
-			break;
-	}
+	set_board_at(state, next_row, next_col, body_to_tail(get_board_at(state, next_row, next_col)));
+	set_board_at(state, buf_snake->tail_row, buf_snake->tail_col, ' ');
 
-	// Check whether there is a bend point
-	if (before_tail == ' ') {
-		unsigned int x_cor = buf_snake->tail_col;
-		unsigned int y_cor = buf_snake->tail_row;
-
-		if (is_snake(get_board_at(state, y_cor + 1, x_cor))) {
-			set_board_at(state, y_cor, x_cor, 's');
-		}
-		if (is_snake(get_board_at(state, y_cor - 1, x_cor))) {
-			set_board_at(state, y_cor, x_cor, 'w');
-		}
-		if (is_snake(get_board_at(state, y_cor, x_cor + 1))) {
-			set_board_at(state, y_cor, x_cor, 'd');
-		}
-		if (is_snake(get_board_at(state, y_cor, x_cor - 1))) {
-			set_board_at(state, y_cor, x_cor, 'a');
-		}
-	}
+	// Update the snake_t
+	buf_snake->tail_row = next_row;
+	buf_snake->tail_col = next_col;
 
   return;
 }
@@ -443,13 +403,13 @@ game_state_t* load_board(char* filename) {
 		return NULL;
 	}
 
-	state->board = (char **)malloc((state->num_rows + 1) * sizeof (char *));
+	state->board = (char **)malloc((state->num_rows) * sizeof (char *));
 
-	char buf[1024];
+	char buf[2048];
 
 	for (size_t i = 0; i < state->num_rows; i ++) {
 		fgets(buf, sizeof(buf), fp);
-		state->board[i] = (char *)malloc(strlen(buf - 1));
+		state->board[i] = (char *)malloc(strlen(buf) + 1);
 		strcpy(state->board[i], buf);
 	}
 
@@ -469,18 +429,23 @@ game_state_t* load_board(char* filename) {
 static void find_head(game_state_t* state, unsigned int snum) {
   // TODO: Implement this function.
 	unsigned int buf_snum = snum;
+	bool find_ans = false;
 
 	for (size_t i = 0; i < state->num_rows; i ++) {
-		for (size_t j = 0; j < sizeof(state->board[i]); j ++) {
+		for (size_t j = 0; j < strlen(state->board[i]); j ++) {
 			if (is_head(get_board_at(state, i, j))) {
 				if (buf_snum == 0)	 {
 					(state->snakes + snum)->head_row = i;
 					(state->snakes + snum)->head_col = j;
+					find_ans = true;
 					break;
 				}
 				buf_snum --;
 			}
 		}
+
+		if (find_ans)
+			break;
 	}
 
   return;
@@ -489,17 +454,22 @@ static void find_head(game_state_t* state, unsigned int snum) {
 static void find_tail(game_state_t* state, unsigned int snum) {
 	// TODO: Implement this function.
 	unsigned int buf_snum = snum;
+	bool find_ans = false;
 
 	for (size_t i = 0; i < state->num_rows; i ++) {
-		for (size_t j = 0; j < sizeof(state->board[i]); j ++) {
+		for (size_t j = 0; j < strlen(state->board[i]); j ++) {
 			if (is_tail(get_board_at(state, i, j))) {
 				if (buf_snum == 0)	 {
 					(state->snakes + snum)->tail_row = i;
 					(state->snakes + snum)->tail_col = j;
+					find_ans = true;
 					break;
 				}
 				buf_snum --;
 			}
+		}
+		if (find_ans) {
+			break;
 		}
 	}
 
@@ -512,7 +482,7 @@ game_state_t* initialize_snakes(game_state_t* state) {
 	unsigned int count = 0;
 
 	for (size_t i = 0; i < state->num_rows; i ++) {
-		for (size_t j = 0; j < sizeof(state->board[i]); j ++) {
+		for (size_t j = 0; j < strlen(state->board[i]); j ++) {
 			if (is_head(get_board_at(state, i, j))) {
 				count ++;
 			}
